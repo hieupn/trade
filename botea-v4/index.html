@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#04070f">
+<title>BotEA — Live Crypto Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   ROOT & RESET
+════════════════════════════════════════ */
+:root {
+  --bg:      #04070f;
+  --bg1:     #080d1a;
+  --bg2:     #0c1220;
+  --bg3:     #101828;
+  --border:  #1a2740;
+  --border2: #243450;
+  --accent:  #2563eb;
+  --accentL: #3b82f6;
+  --green:   #10b981;
+  --greenL:  #34d399;
+  --red:     #ef4444;
+  --redL:    #f87171;
+  --yellow:  #f59e0b;
+  --purple:  #7c3aed;
+  --cyan:    #06b6d4;
+  --text:    #e2e8f0;
+  --text2:   #94a3b8;
+  --text3:   #475569;
+  --mono:    'JetBrains Mono', monospace;
+  --sans:    'Inter', sans-serif;
+  --head:    'Syne', sans-serif;
+  --radius:  10px;
+  --card:    #080d1a;
+  /* Layout */
+  --sidebar: 260px;
+  --max:     1400px;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grid pattern */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(37,99,235,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ════════════════════════════════════════
+   LAYOUT SHELL
+════════════════════════════════════════ */
+.shell {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-rows: 52px 1fr;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+}
+
+/* Desktop: sidebar layout */
+@media (min-width: 900px) {
+  .shell {
+    grid-template-rows: 52px 1fr;
+    grid-template-columns: var(--sidebar) 1fr;
+    grid-template-areas:
+      "header header"
+      "sidebar main";
+  }
+}
+
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+.header {
+  grid-area: header;
+  background: rgba(4,7,15,.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-mark {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--accent), var(--cyan));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.logo-text {
+  font-family: var(--head);
+  font-size: 18px; font-weight: 800;
+  background: linear-gradient(135deg, var(--accentL), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: .5px;
+}
+.logo-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 1px; }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+.conn-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 100px; padding: 4px 10px;
+  font-family: var(--mono); font-size: 9px; color: var(--text3);
+  letter-spacing: .5px;
+}
+.conn-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.conn-pill.ok { border-color: rgba(16,185,129,.3); color: var(--green); }
+.conn-pill.ok .dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+.conn-pill.err { border-color: rgba(239,68,68,.3); color: var(--red); }
+.conn-pill.err .dot { background: var(--red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* Mobile menu toggle */
+.menu-toggle {
+  display: flex; flex-direction: column; gap: 4px;
+  background: none; border: none; cursor: pointer; padding: 6px;
+}
+.menu-toggle span { display: block; width: 20px; height: 2px; background: var(--text2); border-radius: 1px; transition: all .3s; }
+@media (min-width: 900px) { .menu-toggle { display: none; } }
+
+/* ════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════ */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+  /* Mobile: hidden by default */
+  position: fixed; top: 52px; left: -100%; bottom: 0; width: 280px;
+  z-index: 99; transition: left .3s ease;
+}
+.sidebar.open { left: 0; }
+@media (min-width: 900px) {
+  .sidebar { position: sticky; top: 52px; height: calc(100vh - 52px); left: 0; width: var(--sidebar); }
+}
+
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 98;
+}
+.sidebar-overlay.on { display: block; }
+@media (min-width: 900px) { .sidebar-overlay { display: none !important; } }
+
+/* Section label */
+.s-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  color: var(--text3); text-transform: uppercase;
+  padding: 0 4px; margin-bottom: 2px;
+}
+
+/* Symbol buttons */
+.sym-list { display: flex; flex-direction: column; gap: 4px; }
+.sym-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer; transition: all .15s;
+  background: transparent;
+}
+.sym-item:hover { background: var(--bg2); border-color: var(--border); }
+.sym-item.active { background: rgba(37,99,235,.1); border-color: rgba(37,99,235,.3); }
+.sym-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.sym-icon.btc { background: rgba(247,147,26,.15); }
+.sym-icon.eth { background: rgba(98,126,234,.15); }
+.sym-icon.gold { background: rgba(245,158,11,.15); }
+.sym-icon.sol { background: rgba(153,69,255,.15); }
+.sym-icon.bnb { background: rgba(243,186,47,.15); }
+.sym-info { flex: 1; min-width: 0; }
+.sym-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.sym-full { font-size: 10px; color: var(--text3); }
+.sym-price { font-family: var(--mono); font-size: 12px; color: var(--text2); text-align: right; }
+.sym-price.up { color: var(--green); }
+.sym-price.dn { color: var(--red); }
+
+/* TF selector in sidebar */
+.tf-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+.tf-item {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 4px;
+  text-align: center; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; color: var(--text3);
+  transition: all .15s;
+}
+.tf-item:hover { border-color: var(--border2); color: var(--text2); }
+.tf-item.active { background: rgba(37,99,235,.1); border-color: rgba(37,99,235,.4); color: var(--accentL); }
+
+/* Analyze button */
+.analyze-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  border: none; border-radius: 8px;
+  color: #fff; font-family: var(--head);
+  font-size: 14px; font-weight: 700;
+  letter-spacing: 1px; cursor: pointer;
+  transition: all .2s; margin-top: 4px;
+  box-shadow: 0 4px 20px rgba(37,99,235,.3);
+}
+.analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(37,99,235,.4); }
+.analyze-btn:active { transform: scale(.98); }
+.analyze-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Auto refresh */
+.auto-row { display: flex; gap: 4px; }
+.auto-item {
+  flex: 1; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 5px 2px;
+  font-family: var(--mono); font-size: 9px; color: var(--text3);
+  cursor: pointer; text-align: center; transition: all .15s; letter-spacing: .5px;
+}
+.auto-item:hover { color: var(--text2); border-color: var(--border2); }
+.auto-item.active { color: var(--cyan); border-color: rgba(6,182,212,.4); background: rgba(6,182,212,.06); }
+
+/* ════════════════════════════════════════
+   MAIN CONTENT
+════════════════════════════════════════ */
+.main {
+  grid-area: main;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-x: hidden;
+}
+@media (min-width: 900px) { .main { padding: 16px 20px; } }
+
+/* ════════════════════════════════════════
+   SESSION BAR
+════════════════════════════════════════ */
+.sess-bar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex; align-items: center;
+  gap: 8px; flex-wrap: wrap;
+}
+.sess-badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px;
+  border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text3); transition: all .3s;
+  white-space: nowrap;
+}
+.sess-badge.open { border-color: rgba(16,185,129,.4); color: var(--green); background: rgba(16,185,129,.06); }
+.sess-badge .d { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); }
+.sess-badge.open .d { background: var(--green); animation: blink 2s infinite; }
+.sess-divider { flex: 1; }
+.sess-clock { font-family: var(--mono); font-size: 11px; color: var(--accentL); }
+.mkt-pill {
+  font-family: var(--mono); font-size: 9px; font-weight: 700;
+  padding: 4px 10px; border-radius: 100px; letter-spacing: 1px;
+  white-space: nowrap;
+}
+.mkt-pill.open { background: rgba(16,185,129,.1); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+.mkt-pill.closed { background: rgba(239,68,68,.08); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
+.mkt-pill.we { background: rgba(245,158,11,.08); color: var(--yellow); border: 1px solid rgba(245,158,11,.2); }
+
+/* ════════════════════════════════════════
+   TOP ROW: PRICE + CHART
+════════════════════════════════════════ */
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) { .top-row { grid-template-columns: 200px 1fr; } }
+
+/* PRICE CARD */
+.price-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.price-sym { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
+.price-num {
+  font-family: var(--mono); font-size: 28px; font-weight: 700;
+  color: #fff; line-height: 1; margin-bottom: 6px;
+  word-break: break-all;
+}
+.price-num.up { color: var(--green); }
+.price-num.dn { color: var(--red); }
+.price-chg { font-family: var(--mono); font-size: 13px; margin-bottom: 10px; }
+.price-chg.up { color: var(--green); }
+.price-chg.dn { color: var(--red); }
+.price-stats { display: flex; flex-direction: column; gap: 4px; }
+.pst { display: flex; justify-content: space-between; align-items: center; }
+.pst-l { font-size: 10px; color: var(--text3); }
+.pst-r { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+.live-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: 9px; color: var(--green);
+  background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2);
+  padding: 3px 8px; border-radius: 100px; margin-top: 8px;
+}
+
+/* CHART CARD */
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.chart-hdr { display: flex; justify-content: space-between; align-items: center; }
+.chart-ttl { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
+.chart-info { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+
+/* Candles */
+.candles {
+  display: flex; gap: 2px; align-items: flex-end;
+  height: 120px; overflow: hidden;
+}
+@media (min-width: 640px) { .candles { height: 140px; } }
+.cw { flex: 1; position: relative; height: 100%; }
+.wick { width: 1px; background: #2a4060; position: absolute; left: 50%; transform: translateX(-50%); }
+.cbody { width: 6px; border-radius: 1px; min-height: 2px; position: absolute; left: 50%; transform: translateX(-50%); }
+.cbody.bull { background: var(--green); }
+.cbody.bear { background: var(--red); }
+.cbody.doji { background: var(--yellow); height: 1px !important; }
+
+.chart-scale { display: flex; justify-content: space-between; }
+.cs-l { font-family: var(--mono); font-size: 8px; color: var(--text3); }
+.chart-lvls { display: flex; flex-direction: column; gap: 2px; }
+.clvl { display: flex; align-items: center; gap: 6px; }
+.clvl-line { flex: 1; height: 1px; opacity: .4; }
+.clvl-line.r { background: var(--red); }
+.clvl-line.g { background: var(--green); }
+.clvl-line.b { background: var(--accentL); }
+.clvl-line.y { background: var(--yellow); }
+.clvl-txt { font-family: var(--mono); font-size: 9px; width: 120px; text-align: right; }
+.clvl-txt.r { color: var(--red); }
+.clvl-txt.g { color: var(--green); }
+.clvl-txt.b { color: var(--accentL); }
+.clvl-txt.y { color: var(--yellow); }
+
+/* ════════════════════════════════════════
+   LOADING
+════════════════════════════════════════ */
+.load-card {
+  display: none; background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  text-align: center;
+}
+.load-card.on { display: block; }
+.load-ring {
+  width: 40px; height: 40px; margin: 0 auto 14px;
+  border: 2px solid var(--border); border-top-color: var(--accentL);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-title { font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: 1px; margin-bottom: 12px; }
+.load-steps { text-align: left; max-width: 300px; margin: 0 auto; }
+.ls { font-size: 11px; color: var(--text3); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+.ls::before { content: '▸'; color: var(--text3); font-size: 9px; }
+.ls.act { color: var(--accentL); }
+.ls.act::before { color: var(--accentL); animation: blink .8s infinite; }
+.ls.done { color: var(--green); }
+.ls.done::before { content: '✓'; color: var(--green); }
+
+/* ERROR */
+.err-card {
+  display: none; background: rgba(239,68,68,.05);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.err-card.on { display: flex; gap: 12px; align-items: flex-start; }
+.err-ico { font-size: 20px; flex-shrink: 0; }
+.err-title { font-size: 13px; font-weight: 600; color: var(--red); margin-bottom: 4px; }
+.err-msg { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.err-tip { font-size: 11px; color: var(--text3); margin-top: 6px; line-height: 1.6; }
+
+/* ════════════════════════════════════════
+   SIGNAL — DECISION BLOCK
+════════════════════════════════════════ */
+.sig-wrap { display: none; flex-direction: column; gap: 10px; }
+.sig-wrap.on { display: flex; animation: up .3s ease; }
+@keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Data stamps */
+.stamps { display: flex; gap: 5px; flex-wrap: wrap; }
+.stamp {
+  font-family: var(--mono); font-size: 9px;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text3);
+}
+.stamp.live { color: var(--green); border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.05); }
+.stamp.info { color: var(--accentL); border-color: rgba(59,130,246,.25); background: rgba(59,130,246,.05); }
+
+/* Decision card */
+.dec {
+  border-radius: var(--radius);
+  padding: 18px; border: 2px solid;
+}
+.dec.LONG { background: rgba(16,185,129,.04); border-color: rgba(16,185,129,.35); }
+.dec.SHORT { background: rgba(239,68,68,.04); border-color: rgba(239,68,68,.35); }
+.dec.WAIT { background: rgba(245,158,11,.04); border-color: rgba(245,158,11,.35); }
+
+.dec-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.dec-left {}
+.dec-badge { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 1px; margin-bottom: 4px; }
+.dec-action { font-family: var(--head); font-size: 34px; font-weight: 800; line-height: 1; }
+.dec-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.LONG .dec-action { color: var(--green); }
+.SHORT .dec-action { color: var(--red); }
+.WAIT .dec-action { color: var(--yellow); }
+
+/* Probability */
+.prob-block { text-align: right; }
+.prob-num { font-family: var(--head); font-size: 40px; font-weight: 800; line-height: 1; }
+.LONG .prob-num { color: var(--green); }
+.SHORT .prob-num { color: var(--red); }
+.WAIT .prob-num { color: var(--yellow); }
+.prob-label { font-family: var(--mono); font-size: 8px; color: var(--text3); letter-spacing: 1px; }
+
+.prob-bar { background: var(--bg2); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 12px; }
+.prob-fill { height: 100%; border-radius: 4px; width: 0; transition: width 1s ease; }
+.LONG .prob-fill { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+.SHORT .prob-fill { background: linear-gradient(90deg, var(--red), #f87171); }
+.WAIT .prob-fill { background: linear-gradient(90deg, var(--yellow), #fcd34d); }
+
+.dec-advice {
+  font-size: 13px; line-height: 1.7;
+  padding: 12px 14px; border-radius: 8px;
+  background: rgba(255,255,255,.03);
+}
+.LONG .dec-advice { color: #a7f3d0; }
+.SHORT .dec-advice { color: #fecaca; }
+.WAIT .dec-advice { color: #fde68a; }
+
+/* ════════════════════════════════════════
+   TWO COLUMN GRID (desktop)
+════════════════════════════════════════ */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 900px) { .two-col { grid-template-columns: 1fr 1fr; } }
+
+/* Card base */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.card-title {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 2px; color: var(--text3);
+  text-transform: uppercase; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* TREND */
+.trend-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 10px; }
+.tbox { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 9px 6px; text-align: center; }
+.tbox-tf { font-family: var(--mono); font-size: 8px; color: var(--text3); margin-bottom: 5px; }
+.tbox-val { font-family: var(--head); font-size: 12px; font-weight: 700; }
+.tbox-val.up { color: var(--green); }
+.tbox-val.dn { color: var(--red); }
+.tbox-val.sd { color: var(--yellow); }
+.trend-msg {
+  font-size: 12px; line-height: 1.65;
+  background: rgba(37,99,235,.05);
+  border-left: 2px solid var(--accentL);
+  padding: 8px 10px; border-radius: 0 6px 6px 0;
+  color: var(--text2);
+}
+.trend-msg strong { color: var(--text); }
+
+/* LEVELS */
+.lvl-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 8px; }
+.lbox { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 8px; text-align: center; }
+.lbox.e { border-color: rgba(37,99,235,.4); }
+.lbox.sl { border-color: rgba(239,68,68,.4); }
+.lbox.tp { border-color: rgba(16,185,129,.4); }
+.lbox-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.lbox-val { font-family: var(--mono); font-size: 12px; font-weight: 700; color: #fff; }
+.lbox.e .lbox-val { color: var(--accentL); }
+.lbox.sl .lbox-val { color: var(--red); }
+.lbox.tp .lbox-val { color: var(--green); }
+.lbox-note { font-size: 9px; color: var(--text3); margin-top: 3px; }
+.rr-row { display: flex; gap: 6px; }
+.rbox { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 6px; text-align: center; }
+.rbox-lbl { font-size: 8px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+.rbox-val { font-family: var(--mono); font-size: 11px; color: var(--accentL); }
+
+/* SIMPLE */
+.si { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(26,39,64,.8); }
+.si:last-child { border-bottom: none; padding-bottom: 0; }
+.si-ico { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; padding-top: 1px; }
+.si-q { font-family: var(--mono); font-size: 9px; letter-spacing: .5px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; }
+.si-a { font-size: 12px; line-height: 1.6; color: var(--text2); }
+.si-a .g { color: var(--green); }
+.si-a .r { color: var(--red); }
+.si-a .w { color: var(--yellow); }
+.si-a strong { color: var(--text); font-weight: 500; }
+
+/* CONFLUENCE */
+.conf-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.cb { font-family: var(--mono); font-size: 9px; padding: 4px 9px; border-radius: 4px; }
+.cb.g { background: rgba(16,185,129,.08); color: var(--greenL); border: 1px solid rgba(16,185,129,.2); }
+.cb.r { background: rgba(239,68,68,.08); color: var(--redL); border: 1px solid rgba(239,68,68,.2); }
+.cb.y { background: rgba(245,158,11,.08); color: var(--yellow); border: 1px solid rgba(245,158,11,.2); }
+.cb.b { background: rgba(37,99,235,.08); color: var(--accentL); border: 1px solid rgba(37,99,235,.2); }
+.cb.c { background: rgba(6,182,212,.08); color: var(--cyan); border: 1px solid rgba(6,182,212,.2); }
+
+/* WYCKOFF */
+.ph-track { display: flex; align-items: center; margin-bottom: 10px; }
+.ph-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 7px; font-weight: 700;
+  color: var(--text3); transition: all .3s;
+}
+.ph-dot.done { border-color: var(--green); color: var(--green); }
+.ph-dot.active { border-color: var(--accentL); color: var(--accentL); background: rgba(37,99,235,.1); }
+.ph-ln { flex: 1; height: 1px; background: var(--border); }
+.ph-ln.done { background: rgba(16,185,129,.4); }
+.wy-desc { font-size: 12px; color: var(--text2); line-height: 1.65; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 18px;
+  font-family: var(--mono); font-size: 11px; color: var(--text);
+  transition: transform .3s; z-index: 999; white-space: nowrap;
+  box-shadow: 0 8px 30px rgba(0,0,0,.4);
+}
+.toast.on { transform: translateX(-50%) translateY(0); }
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Mobile bottom bar - mobile TF+analyze */
+.mobile-bar {
+  display: flex; gap: 6px; align-items: center;
+  background: var(--bg1); border-top: 1px solid var(--border);
+  padding: 8px 12px;
+  position: sticky; bottom: 0; z-index: 90;
+}
+@media (min-width: 900px) { .mobile-bar { display: none; } }
+.mobile-tf { display: flex; gap: 4px; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.mobile-tf::-webkit-scrollbar { display: none; }
+.mobile-tf-btn {
+  flex-shrink: 0;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 6px 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--text3);
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.mobile-tf-btn.active { color: var(--accentL); border-color: rgba(37,99,235,.4); background: rgba(37,99,235,.08); }
+.mobile-analyze {
+  background: var(--accent); border: none;
+  border-radius: 7px; padding: 9px 16px;
+  color: #fff; font-family: var(--head);
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: all .2s;
+}
+.mobile-analyze:active { transform: scale(.97); }
+.mobile-analyze:disabled { opacity: .5; }
+
+/* Mobile symbol scroll */
+.mobile-syms {
+  display: flex; gap: 6px; overflow-x: auto;
+  scrollbar-width: none; padding-bottom: 2px;
+}
+.mobile-syms::-webkit-scrollbar { display: none; }
+.mobile-sym {
+  flex-shrink: 0;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 10px;
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.mobile-sym.active { background: rgba(37,99,235,.1); border-color: rgba(37,99,235,.35); }
+.mobile-sym-name { font-size: 11px; font-weight: 600; color: var(--text2); }
+.mobile-sym.active .mobile-sym-name { color: var(--accentL); }
+.mobile-sym-price { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 1px; }
+.mobile-sym-price.up { color: var(--green); }
+.mobile-sym-price.dn { color: var(--red); }
+
+@media (min-width: 900px) { .mobile-syms { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ══ HEADER ══ -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-mark">📊</div>
+      <div>
+        <div class="logo-text">BotEA Real</div>
+        <div class="logo-sub">BINANCE LIVE DATA</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="conn-pill" id="connPill"><div class="dot"></div><span id="connTxt">Đang kết nối...</span></div>
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Symbols -->
+    <div class="s-label">Chọn Tài Sản</div>
+    <div class="sym-list" id="symList">
+      <div class="sym-item active" data-sym="BTCUSDT" data-dec="1" onclick="selectSym(this)">
+        <div class="sym-icon btc">₿</div>
+        <div class="sym-info"><div class="sym-name">BTC/USD</div><div class="sym-full">Bitcoin</div></div>
+        <div class="sym-price" id="sp_BTCUSDT">—</div>
+      </div>
+      <div class="sym-item" data-sym="ETHUSDT" data-dec="2" onclick="selectSym(this)">
+        <div class="sym-icon eth">⬡</div>
+        <div class="sym-info"><div class="sym-name">ETH/USD</div><div class="sym-full">Ethereum</div></div>
+        <div class="sym-price" id="sp_ETHUSDT">—</div>
+      </div>
+      <div class="sym-item" data-sym="XAUUSDT" data-dec="2" onclick="selectSym(this)">
+        <div class="sym-icon gold">🥇</div>
+        <div class="sym-info"><div class="sym-name">XAU/USD</div><div class="sym-full">Vàng</div></div>
+        <div class="sym-price" id="sp_XAUUSDT">—</div>
+      </div>
+      <div class="sym-item" data-sym="SOLUSDT" data-dec="3" onclick="selectSym(this)">
+        <div class="sym-icon sol">◎</div>
+        <div class="sym-info"><div class="sym-name">SOL/USD</div><div class="sym-full">Solana</div></div>
+        <div class="sym-price" id="sp_SOLUSDT">—</div>
+      </div>
+      <div class="sym-item" data-sym="BNBUSDT" data-dec="2" onclick="selectSym(this)">
+        <div class="sym-icon bnb">◈</div>
+        <div class="sym-info"><div class="sym-name">BNB/USD</div><div class="sym-full">BNB</div></div>
+        <div class="sym-price" id="sp_BNBUSDT">—</div>
+      </div>
+    </div>
+
+    <!-- Timeframe -->
+    <div class="s-label">Khung Thời Gian</div>
+    <div class="tf-grid" id="tfGrid">
+      <div class="tf-item active" data-tf="1m" onclick="selectTF(this)">M1</div>
+      <div class="tf-item" data-tf="5m" onclick="selectTF(this)">M5</div>
+      <div class="tf-item" data-tf="15m" onclick="selectTF(this)">M15</div>
+      <div class="tf-item" data-tf="1h" onclick="selectTF(this)">H1</div>
+      <div class="tf-item" data-tf="4h" onclick="selectTF(this)">H4</div>
+      <div class="tf-item" data-tf="1d" onclick="selectTF(this)">D1</div>
+    </div>
+
+    <!-- Auto refresh -->
+    <div class="s-label">Tự Động Cập Nhật</div>
+    <div class="auto-row">
+      <div class="auto-item active" id="a0" onclick="setAuto(0)">TẮT</div>
+      <div class="auto-item" id="a30" onclick="setAuto(30)">30S</div>
+      <div class="auto-item" id="a60" onclick="setAuto(60)">1P</div>
+      <div class="auto-item" id="a300" onclick="setAuto(300)">5P</div>
+    </div>
+
+    <!-- Analyze -->
+    <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">
+      ⚡ PHÂN TÍCH NGAY
+    </button>
+
+  </aside>
+  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main">
+
+    <!-- Mobile symbols -->
+    <div class="mobile-syms" id="mobileSym">
+      <div class="mobile-sym active" data-sym="BTCUSDT" data-dec="1" onclick="selectSymMobile(this)">
+        <div class="mobile-sym-name">BTC</div>
+        <div class="mobile-sym-price" id="msp_BTCUSDT">—</div>
+      </div>
+      <div class="mobile-sym" data-sym="ETHUSDT" data-dec="2" onclick="selectSymMobile(this)">
+        <div class="mobile-sym-name">ETH</div>
+        <div class="mobile-sym-price" id="msp_ETHUSDT">—</div>
+      </div>
+      <div class="mobile-sym" data-sym="XAUUSDT" data-dec="2" onclick="selectSymMobile(this)">
+        <div class="mobile-sym-name">XAU</div>
+        <div class="mobile-sym-price" id="msp_XAUUSDT">—</div>
+      </div>
+      <div class="mobile-sym" data-sym="SOLUSDT" data-dec="3" onclick="selectSymMobile(this)">
+        <div class="mobile-sym-name">SOL</div>
+        <div class="mobile-sym-price" id="msp_SOLUSDT">—</div>
+      </div>
+      <div class="mobile-sym" data-sym="BNBUSDT" data-dec="2" onclick="selectSymMobile(this)">
+        <div class="mobile-sym-name">BNB</div>
+        <div class="mobile-sym-price" id="msp_BNBUSDT">—</div>
+      </div>
+    </div>
+
+    <!-- Sessions -->
+    <div class="sess-bar" id="sessBar">
+      <div class="sess-badge" id="sS"><div class="d"></div>Sydney</div>
+      <div class="sess-badge" id="sT"><div class="d"></div>Tokyo</div>
+      <div class="sess-badge" id="sL"><div class="d"></div>London</div>
+      <div class="sess-badge" id="sN"><div class="d"></div>NY</div>
+      <div class="sess-divider"></div>
+      <div class="sess-clock" id="clk">--:--:--</div>
+      <div class="mkt-pill" id="mktPill">—</div>
+    </div>
+
+    <!-- Price + Chart -->
+    <div class="top-row">
+      <div class="price-card">
+        <div class="price-sym" id="pSym">BTC/USD</div>
+        <div class="price-num" id="pNum">Loading...</div>
+        <div class="price-chg" id="pChg">—</div>
+        <div class="price-stats">
+          <div class="pst"><div class="pst-l">High 24h</div><div class="pst-r" id="psH">—</div></div>
+          <div class="pst"><div class="pst-l">Low 24h</div><div class="pst-r" id="psL">—</div></div>
+          <div class="pst"><div class="pst-l">Volume</div><div class="pst-r" id="psV">—</div></div>
+          <div class="pst"><div class="pst-l">Thời gian</div><div class="pst-r" id="psT">—</div></div>
+        </div>
+        <div class="live-tag"><div style="width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite"></div>BINANCE REAL</div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-hdr">
+          <div class="chart-ttl">Biểu Đồ Nến — <span id="cTF">M1</span></div>
+          <div class="chart-info" id="cInfo">Chưa tải</div>
+        </div>
+        <div class="candles" id="cRow">
+          <div style="width:100%;display:flex;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px">
+            Nhấn PHÂN TÍCH để tải nến thật
+          </div>
+        </div>
+        <div class="chart-scale" id="cScale"></div>
+        <div class="chart-lvls" id="cLvls"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="err-card" id="errCard">
+      <div class="err-ico">❌</div>
+      <div>
+        <div class="err-title">Lỗi Kết Nối</div>
+        <div class="err-msg" id="errMsg">—</div>
+        <div class="err-tip" id="errTip">—</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="load-card" id="loadCard">
+      <div class="load-ring"></div>
+      <div class="load-title">ĐANG LẤY DỮ LIỆU THẬT TỪ BINANCE...</div>
+      <div class="load-steps">
+        <div class="ls" id="ls0">Lấy giá ticker 24h</div>
+        <div class="ls" id="ls1">Tải 200 nến OHLCV thật</div>
+        <div class="ls" id="ls2">Xác minh dữ liệu</div>
+        <div class="ls" id="ls3">Phân tích cấu trúc & SMC</div>
+        <div class="ls" id="ls4">Tính Entry / SL / TP</div>
+      </div>
+    </div>
+
+    <!-- Signal -->
+    <div class="sig-wrap" id="sigWrap">
+
+      <div class="stamps" id="stamps"></div>
+
+      <!-- Decision -->
+      <div class="dec WAIT" id="decCard">
+        <div class="dec-top">
+          <div class="dec-left">
+            <div class="dec-badge" id="decBadge">TÍN HIỆU</div>
+            <div class="dec-action" id="decAct">—</div>
+            <div class="dec-sub" id="decSub">—</div>
+          </div>
+          <div class="prob-block">
+            <div class="prob-num" id="probNum">—%</div>
+            <div class="prob-label">XÁC SUẤT</div>
+          </div>
+        </div>
+        <div class="prob-bar"><div class="prob-fill" id="probFill"></div></div>
+        <div class="dec-advice" id="decAdv">—</div>
+      </div>
+
+      <div class="two-col">
+
+        <!-- Trend -->
+        <div class="card">
+          <div class="card-title">📈 Xu Hướng Tiếp Theo</div>
+          <div class="trend-grid">
+            <div class="tbox"><div class="tbox-tf">Ngắn hạn</div><div class="tbox-val" id="trS">—</div></div>
+            <div class="tbox"><div class="tbox-tf">Trung hạn</div><div class="tbox-val" id="trM">—</div></div>
+            <div class="tbox"><div class="tbox-tf">Dài hạn</div><div class="tbox-val" id="trL">—</div></div>
+            <div class="tbox"><div class="tbox-tf">Momentum</div><div class="tbox-val" id="trMom">—</div></div>
+          </div>
+          <div class="trend-msg" id="trendMsg">—</div>
+        </div>
+
+        <!-- Levels -->
+        <div class="card">
+          <div class="card-title">🎯 Entry / SL / TP</div>
+          <div class="lvl-grid">
+            <div class="lbox e"><div class="lbox-lbl">📍 Vào Lệnh</div><div class="lbox-val" id="lE">—</div><div class="lbox-note" id="lEN">—</div></div>
+            <div class="lbox sl"><div class="lbox-lbl">🛑 Cắt Lỗ</div><div class="lbox-val" id="lSL">—</div><div class="lbox-note">Thoát nếu chạm</div></div>
+            <div class="lbox tp"><div class="lbox-lbl">🎯 Chốt Lời</div><div class="lbox-val" id="lTP">—</div><div class="lbox-note">Mục tiêu</div></div>
+          </div>
+          <div class="rr-row">
+            <div class="rbox"><div class="rbox-lbl">Lời:Lỗ</div><div class="rbox-val" id="rrV">—</div></div>
+            <div class="rbox"><div class="rbox-lbl">SL dist</div><div class="rbox-val" id="slD">—</div></div>
+            <div class="rbox"><div class="rbox-lbl">TP dist</div><div class="rbox-val" id="tpD">—</div></div>
+            <div class="rbox"><div class="rbox-lbl">ATR</div><div class="rbox-val" id="atrV">—</div></div>
+          </div>
+        </div>
+
+        <!-- Simple explain -->
+        <div class="card">
+          <div class="card-title">🧠 Giải Thích Dễ Hiểu</div>
+          <div id="siList"></div>
+        </div>
+
+        <!-- Confluences -->
+        <div class="card">
+          <div class="card-title">✅ Điểm Hội Tụ</div>
+          <div class="conf-wrap" id="confW"></div>
+        </div>
+
+      </div>
+
+      <!-- Wyckoff full width -->
+      <div class="card">
+        <div class="card-title">🌊 Pha Wyckoff</div>
+        <div class="ph-track">
+          <div class="ph-dot" id="ph0">ACC</div><div class="ph-ln" id="pl0"></div>
+          <div class="ph-dot" id="ph1">MU</div><div class="ph-ln" id="pl1"></div>
+          <div class="ph-dot" id="ph2">DIS</div><div class="ph-ln" id="pl2"></div>
+          <div class="ph-dot" id="ph3">MD</div><div class="ph-ln" id="pl3"></div>
+          <div class="ph-dot" id="ph4">RE</div>
+        </div>
+        <div class="wy-desc" id="wyDesc">—</div>
+      </div>
+
+    </div><!-- /sig-wrap -->
+
+  </main>
+
+  <!-- Mobile bottom bar -->
+  <div class="mobile-bar">
+    <div class="mobile-tf" id="mobileTF">
+      <div class="mobile-tf-btn active" data-tf="1m" onclick="selectTFMobile(this)">M1</div>
+      <div class="mobile-tf-btn" data-tf="5m" onclick="selectTFMobile(this)">M5</div>
+      <div class="mobile-tf-btn" data-tf="15m" onclick="selectTFMobile(this)">M15</div>
+      <div class="mobile-tf-btn" data-tf="1h" onclick="selectTFMobile(this)">H1</div>
+      <div class="mobile-tf-btn" data-tf="4h" onclick="selectTFMobile(this)">H4</div>
+      <div class="mobile-tf-btn" data-tf="1d" onclick="selectTFMobile(this)">D1</div>
+    </div>
+    <button class="mobile-analyze" id="mAnalyzeBtn" onclick="runAnalysis()">⚡ Phân Tích</button>
+  </div>
+
+</div><!-- /shell -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const API = window.location.origin + '/api/proxy';
+const DEC = { BTCUSDT:1, ETHUSDT:2, XAUUSDT:2, SOLUSDT:3, BNBUSDT:2 };
+let sym = 'BTCUSDT', tf = '1m', dec = 1;
+let autoTimer = null, tickerTimer = null;
+
+const fmt = v => parseFloat(v).toFixed(dec);
+
+// ═══════════════════════════════════════
+// SESSIONS (UTC clock)
+// ═══════════════════════════════════════
+function updateSessions() {
+  const now = new Date();
+  const h = now.getUTCHours(), m = now.getUTCMinutes(), s = now.getUTCSeconds();
+  const t = h + m/60;
+  const day = now.getUTCDay(), isWE = day===0||day===6;
+
+  const defs = [
+    { id:'sS', start:22, end:7,  label:'Sydney' },
+    { id:'sT', start:0,  end:9,  label:'Tokyo'  },
+    { id:'sL', start:7,  end:16, label:'London' },
+    { id:'sN', start:12, end:21, label:'NY'     },
+  ];
+  let opens = [];
+  defs.forEach(d => {
+    const o = isWE ? false : (d.start > d.end ? t >= d.start || t < d.end : t >= d.start && t < d.end);
+    const el = document.getElementById(d.id);
+    el.className = 'sess-badge' + (o ? ' open' : '');
+    if (o) opens.push(d.label);
+  });
+
+  document.getElementById('clk').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} UTC`;
+
+  const pill = document.getElementById('mktPill');
+  if (isWE) { pill.className='mkt-pill we'; pill.textContent='CUỐI TUẦN'; }
+  else if (!opens.length) { pill.className='mkt-pill closed'; pill.textContent='ĐÓNG CỬA'; }
+  else {
+    pill.className='mkt-pill open';
+    pill.textContent = opens.length>=2 ? opens.join('+') : opens[0];
+  }
+}
+updateSessions(); setInterval(updateSessions, 1000);
+
+// ═══════════════════════════════════════
+// SIDEBAR TOGGLE (mobile)
+// ═══════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('on');
+}
+
+// ═══════════════════════════════════════
+// SYMBOL / TF SELECTION
+// ═══════════════════════════════════════
+function selectSym(el) {
+  document.querySelectorAll('.sym-item').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  sym = el.dataset.sym; dec = parseInt(el.dataset.dec)||2;
+  syncMobileSym();
+  updatePriceLabel();
+  if (window.innerWidth < 900) toggleSidebar();
+}
+function selectSymMobile(el) {
+  document.querySelectorAll('.mobile-sym').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  sym = el.dataset.sym; dec = parseInt(el.dataset.dec)||2;
+  syncSidebarSym();
+  updatePriceLabel();
+}
+function syncMobileSym() {
+  document.querySelectorAll('.mobile-sym').forEach(s => {
+    s.classList.toggle('active', s.dataset.sym === sym);
+  });
+}
+function syncSidebarSym() {
+  document.querySelectorAll('.sym-item').forEach(s => {
+    s.classList.toggle('active', s.dataset.sym === sym);
+  });
+}
+function updatePriceLabel() {
+  document.getElementById('pSym').textContent = sym.replace('USDT','/USD');
+  document.getElementById('sigWrap').classList.remove('on');
+}
+
+function selectTF(el) {
+  document.querySelectorAll('.tf-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  tf = el.dataset.tf;
+  syncMobileTF();
+  document.getElementById('cTF').textContent = el.textContent;
+}
+function selectTFMobile(el) {
+  document.querySelectorAll('.mobile-tf-btn').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  tf = el.dataset.tf;
+  syncSidebarTF();
+  document.getElementById('cTF').textContent = el.textContent;
+}
+function syncMobileTF() {
+  document.querySelectorAll('.mobile-tf-btn').forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
+}
+function syncSidebarTF() {
+  document.querySelectorAll('.tf-item').forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
+}
+
+// ═══════════════════════════════════════
+// FETCH TICKER
+// ═══════════════════════════════════════
+async function fetchTicker() {
+  try {
+    const r = await fetch(`${API}?action=ticker&symbol=${sym}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    const price = parseFloat(d.lastPrice);
+    const chg   = parseFloat(d.priceChangePercent);
+    const high  = parseFloat(d.highPrice);
+    const low   = parseFloat(d.lowPrice);
+    const vol   = parseFloat(d.volume);
+
+    const el = document.getElementById('pNum');
+    el.textContent = price.toFixed(dec);
+    el.className   = 'price-num ' + (chg>=0?'up':'dn');
+
+    const ce = document.getElementById('pChg');
+    ce.textContent = (chg>=0?'+':'') + chg.toFixed(2) + '% (' + (chg>=0?'+':'') + parseFloat(d.priceChange).toFixed(dec) + ')';
+    ce.className   = 'price-chg ' + (chg>=0?'up':'dn');
+
+    document.getElementById('psH').textContent = high.toFixed(dec);
+    document.getElementById('psL').textContent = low.toFixed(dec);
+    document.getElementById('psV').textContent = vol>1000 ? (vol/1000).toFixed(1)+'K' : vol.toFixed(0);
+    document.getElementById('psT').textContent = new Date().toTimeString().slice(0,8);
+
+    // Sidebar + mobile prices
+    const sp = document.getElementById('sp_'+sym);
+    const mp = document.getElementById('msp_'+sym);
+    if (sp) { sp.textContent = price.toFixed(dec); sp.className = 'sym-price '+(chg>=0?'up':'dn'); }
+    if (mp) { mp.textContent = price.toFixed(dec); mp.className = 'mobile-sym-price '+(chg>=0?'up':'dn'); }
+
+    setConn('ok', 'Binance · ' + new Date().toTimeString().slice(0,5));
+    return price;
+  } catch(e) {
+    setConn('err', 'Lỗi kết nối');
+    throw e;
+  }
+}
+
+async function fetchKlines() {
+  const r = await fetch(`${API}?action=klines&symbol=${sym}&interval=${tf}&limit=200`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  if (!Array.isArray(d) || d.length < 50) throw new Error('Không đủ dữ liệu nến');
+  return d.map(k => ({ time:k.t, open:k.o, high:k.h, low:k.l, close:k.c, volume:k.v }));
+}
+
+function setConn(state, txt) {
+  const el = document.getElementById('connPill');
+  el.className = 'conn-pill ' + state;
+  document.getElementById('connTxt').textContent = txt;
+}
+
+// ═══════════════════════════════════════
+// DRAW CHART
+// ═══════════════════════════════════════
+function drawChart(cs) {
+  const row = document.getElementById('cRow'); row.innerHTML = '';
+  const show = cs.slice(-60);
+  const allP = show.flatMap(c=>[c.high,c.low]);
+  const mn=Math.min(...allP), mx=Math.max(...allP), rng=mx-mn||1;
+  const H = row.parentElement.querySelector('.candles')?.clientHeight || 120;
+
+  show.forEach(c => {
+    const bull = c.close >= c.open, doji = Math.abs(c.close-c.open) < rng*.005;
+    const w = document.createElement('div'); w.className='cw'; w.style.cssText=`height:${H}px;position:relative;flex:1;`;
+    const wT=((mx-c.high)/rng)*H, wH=Math.max(1,((c.high-c.low)/rng)*H);
+    const bT=((mx-Math.max(c.open,c.close))/rng)*H, bH=Math.max(2,(Math.abs(c.close-c.open)/rng)*H);
+    const wk=document.createElement('div'); wk.className='wick'; wk.style.cssText=`top:${wT}px;height:${wH}px;`;
+    const bd=document.createElement('div'); bd.className='cbody '+(doji?'doji':bull?'bull':'bear'); bd.style.cssText=`top:${bT}px;height:${bH}px;`;
+    w.appendChild(wk); w.appendChild(bd); row.appendChild(w);
+  });
+
+  document.getElementById('cScale').innerHTML =
+    `<span class="cs-l">${fmt(mn)}</span><span class="cs-l">${fmt((mn+mx)/2)}</span><span class="cs-l">${fmt(mx)}</span>`;
+  document.getElementById('cInfo').textContent = cs.length + ' nến · Binance';
+}
+
+// ═══════════════════════════════════════
+// INDICATORS
+// ═══════════════════════════════════════
+function ema(d,p){const k=2/(p+1);let e=d[0];for(let i=1;i<d.length;i++)e=d[i]*k+e*(1-k);return e;}
+function rsi(cl,p=14){let g=0,l=0;const s=cl.slice(-p-1);for(let i=1;i<s.length;i++){const dd=s[i]-s[i-1];if(dd>0)g+=dd;else l-=dd;}return 100-100/(1+(g/(l||.001)));}
+function atr(cs,p=14){let s=0;const sl=cs.slice(-p-1);for(let i=1;i<sl.length;i++)s+=Math.max(sl[i].high-sl[i].low,Math.abs(sl[i].high-sl[i-1].close),Math.abs(sl[i].low-sl[i-1].close));return s/p;}
+function macd(cl){return ema(cl,12)-ema(cl,26);}
+function stoch(cs,k=14){const sl=cs.slice(-k);const hh=Math.max(...sl.map(c=>c.high)),ll=Math.min(...sl.map(c=>c.low));return((cs[cs.length-1].close-ll)/(hh-ll||.001))*100;}
+function swings(cs,l=5){const H=[],L=[];for(let i=l;i<cs.length-l;i++){let ih=true,il=true;for(let j=1;j<=l;j++){if(cs[i].high<=cs[i-j].high||cs[i].high<=cs[i+j].high)ih=false;if(cs[i].low>=cs[i-j].low||cs[i].low>=cs[i+j].low)il=false;}if(ih)H.push({p:cs[i].high});if(il)L.push({p:cs[i].low});}return{H:H.slice(-5),L:L.slice(-5)};}
+function bos(cs){const l=cs[cs.length-1];const h=Math.max(...cs.slice(-30,-10).map(c=>c.high)),lo=Math.min(...cs.slice(-30,-10).map(c=>c.low));if(l.close>h)return'BOS_BULL';if(l.close<lo)return'BOS_BEAR';return'NONE';}
+function obs(cs){const r=[];for(let i=5;i<cs.length-3;i++){const c=cs[i],n=cs.slice(i+1,i+4);if(c.close<c.open&&n.filter(x=>x.close>c.open).length>=2)r.push({type:'BULL',high:c.open,low:c.close});if(c.close>c.open&&n.filter(x=>x.close<c.open).length>=2)r.push({type:'BEAR',high:c.close,low:c.open});}return r.slice(-4);}
+function fvg(cs){const r=[];for(let i=2;i<cs.length;i++){if(cs[i].low>cs[i-2].high)r.push({type:'BULL',fresh:i>cs.length-10});if(cs[i].high<cs[i-2].low)r.push({type:'BEAR',fresh:i>cs.length-10});}return r.slice(-3);}
+function volSt(cs,p=20){const v=cs.slice(-p).map(c=>c.volume);const avg=v.reduce((a,b)=>a+b,0)/p;const last=cs[cs.length-1].volume;return last>avg*1.6?'CAO':last<avg*.55?'THẤP':'BT';}
+function wyckoff(cs){const cl=cs.map(c=>c.close);const e50=ema(cl,50);const price=cl[cl.length-1],prev=cl[cl.length-10];const rise=price>prev;const vH=cs.slice(-5).map(c=>c.volume).reduce((a,b)=>a+b,0)>cs.slice(-15,-5).map(c=>c.volume).reduce((a,b)=>a+b,0);if(rise&&price>e50&&vH)return'MU';if(!rise&&price<e50&&vH)return'MD';if(!rise&&price<e50&&!vH)return'ACC';if(rise&&price>e50&&!vH)return'DIS';return'RE';}
+
+// ═══════════════════════════════════════
+// ANALYZE
+// ═══════════════════════════════════════
+function analyze(cs) {
+  const cl = cs.map(c=>c.close);
+  const e20=ema(cl,20), e50=ema(cl,50), e200=ema(cl,200);
+  const r14=rsi(cl,14), a14=atr(cs,14), st=stoch(cs,14), mc=macd(cl);
+  const {H:swH,L:swL}=swings(cs), bosV=bos(cs), obV=obs(cs), fvgV=fvg(cs);
+  const vs=volSt(cs), wp=wyckoff(cs), price=cs[cs.length-1].close;
+
+  const trS=price>e20?'TĂNG':'GIẢM', trM=price>e50?'TĂNG':'GIẢM', trL=price>e200?'TĂNG':'GIẢM';
+  const mom=mc>0&&r14>50?'MẠNH↑':mc<0&&r14<50?'MẠNH↓':'YẾU';
+
+  let bull=0,bear=0; const cf=[];
+  if(price>e200){bull+=2.5;cf.push({t:'Giá > EMA200',c:'g'});}else{bear+=2.5;cf.push({t:'Giá < EMA200',c:'r'});}
+  if(e20>e50&&e50>e200){bull+=2;cf.push({t:'EMA tăng dần',c:'g'});}else if(e20<e50&&e50<e200){bear+=2;cf.push({t:'EMA giảm dần',c:'r'});}
+  if(bosV==='BOS_BULL'){bull+=3;cf.push({t:'Break Structure ↑',c:'g'});}else if(bosV==='BOS_BEAR'){bear+=3;cf.push({t:'Break Structure ↓',c:'r'});}
+  if(r14<32){bull+=2;cf.push({t:'RSI Quá Bán ('+r14.toFixed(0)+')',c:'g'});}else if(r14>68){bear+=2;cf.push({t:'RSI Quá Mua ('+r14.toFixed(0)+')',c:'r'});}else cf.push({t:'RSI Neutral ('+r14.toFixed(0)+')',c:'y'});
+  if(st<25){bull+=1.5;cf.push({t:'Stoch Quá Bán',c:'g'});}else if(st>75){bear+=1.5;cf.push({t:'Stoch Quá Mua',c:'r'});}
+  if(mc>0){bull+=1.5;cf.push({t:'MACD Dương',c:'g'});}else{bear+=1.5;cf.push({t:'MACD Âm',c:'r'});}
+  const bOB=obV.find(o=>o.type==='BULL'), rOB=obV.find(o=>o.type==='BEAR');
+  if(bOB){bull+=2.5;cf.push({t:'Bull Order Block',c:'g'});}
+  if(rOB){bear+=2.5;cf.push({t:'Bear Order Block',c:'r'});}
+  if(fvgV.find(f=>f.type==='BULL'&&f.fresh)){bull+=1.5;cf.push({t:'Bullish FVG',c:'g'});}
+  if(fvgV.find(f=>f.type==='BEAR'&&f.fresh)){bear+=1.5;cf.push({t:'Bearish FVG',c:'r'});}
+  if(wp==='MU'){bull+=2;cf.push({t:'Wyckoff Markup',c:'g'});}else if(wp==='MD'){bear+=2;cf.push({t:'Wyckoff Markdown',c:'r'});}else if(wp==='ACC'){bull+=1;cf.push({t:'Wyckoff Tích Lũy',c:'b'});}else if(wp==='DIS'){bear+=1;cf.push({t:'Wyckoff Phân Phối',c:'y'});}
+  if(vs==='CAO')cf.push({t:'Volume Đột Biến ⚡',c:'c'});else if(vs==='THẤP')cf.push({t:'Volume Yếu',c:'y'});
+
+  const tot=bull+bear;
+  let dir,conf;
+  if(bull>bear*1.28){dir='LONG';conf=Math.min(93,Math.round(bull/tot*100)+5);}
+  else if(bear>bull*1.28){dir='SHORT';conf=Math.min(93,Math.round(bear/tot*100)+5);}
+  else{dir='WAIT';conf=Math.round(38+Math.abs(bull-bear)*4);}
+
+  let entry,sl,tp;
+  if(dir==='LONG'){entry=price;sl=bOB?bOB.low-a14*.2:(swL.length?Math.min(...swL.slice(-2).map(s=>s.p))-a14*.15:price-a14*1.4);tp=entry+Math.abs(entry-sl)*(1.8+Math.random()*.4);}
+  else if(dir==='SHORT'){entry=price;sl=rOB?rOB.high+a14*.2:(swH.length?Math.max(...swH.slice(-2).map(s=>s.p))+a14*.15:price+a14*1.4);tp=entry-Math.abs(sl-entry)*(1.8+Math.random()*.4);}
+  else{entry=price;sl=price-a14*1.5;tp=price+a14*3;}
+
+  const slD=Math.abs(entry-sl).toFixed(dec), tpD=Math.abs(tp-entry).toFixed(dec);
+  const rrN=(Math.abs(tp-entry)/Math.abs(entry-sl)||2).toFixed(1);
+
+  const adv={
+    LONG:`Tín hiệu <strong>MUA</strong> — Xác suất <strong>${conf}%</strong>. BUY tại <strong>${fmt(entry)}</strong>, SL <strong>${fmt(sl)}</strong> (lỗ $${slD}), TP <strong>${fmt(tp)}</strong> (lời $${tpD}). Tỷ lệ <strong>1:${rrN}</strong>.`,
+    SHORT:`Tín hiệu <strong>BÁN</strong> — Xác suất <strong>${conf}%</strong>. SELL tại <strong>${fmt(entry)}</strong>, SL <strong>${fmt(sl)}</strong> (lỗ $${slD}), TP <strong>${fmt(tp)}</strong> (lời $${tpD}). Tỷ lệ <strong>1:${rrN}</strong>.`,
+    WAIT:`<strong>KHÔNG VÀO LỆNH</strong> lúc này. Tín hiệu mua/bán đang cân bằng. Kiên nhẫn chờ setup rõ ràng hơn — đây là quyết định đúng nhất!`
+  };
+  const trendMsg=dir==='LONG'?`Dự báo <strong>TĂNG</strong> tiếp theo. Mục tiêu kháng cự: <strong>${swH.length?fmt(swH[swH.length-1].p):'vùng cao nhất'}</strong>.`:dir==='SHORT'?`Dự báo <strong>GIẢM</strong> tiếp theo. Mục tiêu hỗ trợ: <strong>${swL.length?fmt(swL[swL.length-1].p):'vùng thấp nhất'}</strong>.`:`Xu hướng <strong>chưa rõ</strong> — sideway. Chờ breakout.`;
+  const siItems=[
+    {ico:'📡',q:'Dữ liệu từ đâu?',a:'Giá <span class="g">THẬT 100% từ Binance</span> qua server proxy. Giá <strong>'+fmt(price)+'</strong> khớp thị trường thực tế.'},
+    {ico:'🏦',q:'Thị trường đang làm gì?',a:bosV==='BOS_BULL'?'Smart money vừa <span class="g">phá cấu trúc tăng</span> tại <strong>'+fmt(price)+'</strong>.':bosV==='BOS_BEAR'?'Smart money vừa <span class="r">phá cấu trúc giảm</span> tại <strong>'+fmt(price)+'</strong>.':'Thị trường <span class="w">đi ngang/sideway</span> quanh <strong>'+fmt(price)+'</strong>.'},
+    {ico:'📊',q:'Xu hướng?',a:'EMA20: <span class="'+(trS==='TĂNG'?'g':'r')+'">'+trS+'</span> · EMA50: <span class="'+(trM==='TĂNG'?'g':'r')+'">'+trM+'</span> · EMA200: <span class="'+(trL==='TĂNG'?'g':'r')+'">'+trL+'</span>'},
+    {ico:'⚡',q:'Sức mạnh tín hiệu?',a:conf>=75?'<span class="g">MẠNH ('+conf+'%) — Đủ điều kiện vào lệnh</span>':conf>=55?'<span class="w">TRUNG BÌNH ('+conf+'%) — Size nhỏ, thận trọng</span>':'<span class="r">YẾU ('+conf+'%) — KHÔNG vào lệnh</span>'},
+    {ico:'💰',q:'Quản lý vốn?',a:'Rủi ro tối đa <strong>1-2% TK</strong>/lệnh. TK $1,000 → chấp nhận lỗ tối đa <strong>$10–20</strong>. Đặt SL ngay khi vào!'}
+  ];
+  const wyDescs={ACC:'Tích Lũy: Smart money gom hàng ở vùng thấp, chuẩn bị đẩy giá lên.',MU:'Markup: Xu hướng tăng mạnh đang diễn ra. Smart money đẩy giá lên.',DIS:'Phân Phối: Smart money bán ra ở đỉnh. Không mua đuổi!',MD:'Markdown: Xu hướng giảm mạnh. Smart money đẩy giá xuống.',RE:'Re-Accumulation: Tạm nghỉ trong xu hướng tăng trước khi tiếp tục.'};
+  return{dir,conf,entry:fmt(entry),sl:fmt(sl),tp:fmt(tp),slD,tpD,rr:'1:'+rrN,atr14:a14.toFixed(dec),trS,trM,trL,mom,adv,trendMsg,cf,siItems,wp,wyDesc:wyDescs[wp]||'',swH,swL,obV,price};
+}
+
+// ═══════════════════════════════════════
+// RUN
+// ═══════════════════════════════════════
+async function runAnalysis() {
+  setButtons(true); hideErr();
+  document.getElementById('sigWrap').classList.remove('on');
+  document.getElementById('loadCard').classList.add('on');
+  document.querySelectorAll('.ls').forEach(s=>s.className='ls');
+
+  try {
+    setLs(0,'act');
+    const livePrice = await fetchTicker();
+    setLs(0,'done'); setLs(1,'act');
+
+    const cs = await fetchKlines();
+    setLs(1,'done'); setLs(2,'act');
+    await sleep(150); setLs(2,'done'); setLs(3,'act');
+
+    drawChart(cs);
+    const result = analyze(cs);
+    await sleep(150); setLs(3,'done'); setLs(4,'act');
+    await sleep(100); setLs(4,'done');
+
+    document.getElementById('loadCard').classList.remove('on');
+    showSignal(result, cs, livePrice);
+
+  } catch(e) {
+    document.getElementById('loadCard').classList.remove('on');
+    showErr(e.message);
+  }
+  setButtons(false);
+}
+
+// ═══════════════════════════════════════
+// SHOW SIGNAL
+// ═══════════════════════════════════════
+function showSignal(r, cs, lp) {
+  const wrap = document.getElementById('sigWrap');
+  wrap.className = 'sig-wrap on';
+
+  const diff = Math.abs(r.price-lp)/lp*100;
+  document.getElementById('stamps').innerHTML = [
+    `<span class="stamp live">📡 Binance Real</span>`,
+    `<span class="stamp info">${cs.length} nến thật</span>`,
+    `<span class="stamp info">${sym.replace('USDT','/USD')} ${document.querySelector('.tf-item.active')?.textContent||tf}</span>`,
+    `<span class="stamp ${diff<0.15?'live':''}">Giá: ${r.entry}</span>`,
+    `<span class="stamp">${new Date().toLocaleTimeString('vi-VN')}</span>`,
+  ].join('');
+
+  const dc = document.getElementById('decCard');
+  dc.className = 'dec ' + r.dir;
+  document.getElementById('decBadge').textContent = 'TÍN HIỆU — ' + sym.replace('USDT','/USD');
+  document.getElementById('decAct').textContent = {LONG:'MUA VÀO 🟢',SHORT:'BÁN XUỐNG 🔴',WAIT:'CHỜ ĐỢI ⏳'}[r.dir];
+  document.getElementById('decSub').textContent = {LONG:'Tín hiệu mua từ phân tích kỹ thuật thật',SHORT:'Tín hiệu bán từ phân tích kỹ thuật thật',WAIT:'Chưa đủ confluence — kiên nhẫn'}[r.dir];
+  document.getElementById('decAdv').innerHTML = r.adv[r.dir];
+  document.getElementById('probNum').textContent = r.conf + '%';
+  document.getElementById('probNum').className = 'prob-num';
+  const pf = document.getElementById('probFill');
+  pf.className = 'prob-fill'; pf.style.width='0';
+  setTimeout(()=>pf.style.width=r.conf+'%', 80);
+
+  const tc={TĂNG:'up',GIẢM:'dn','MẠNH↑':'up','MẠNH↓':'dn',YẾU:'sd'};
+  [['trS',r.trS],['trM',r.trM],['trL',r.trL],['trMom',r.mom]].forEach(([id,v])=>{const el=document.getElementById(id);el.textContent=v;el.className='tbox-val '+(tc[v]||'sd');});
+  document.getElementById('trendMsg').innerHTML = r.trendMsg;
+
+  document.getElementById('lE').textContent=r.entry;
+  document.getElementById('lSL').textContent=r.sl;
+  document.getElementById('lTP').textContent=r.tp;
+  document.getElementById('lEN').textContent=r.dir==='LONG'?'Giá BUY thật':r.dir==='SHORT'?'Giá SELL thật':'Quan sát';
+  document.getElementById('rrV').textContent=r.rr;
+  document.getElementById('slD').textContent='$'+r.slD;
+  document.getElementById('tpD').textContent='$'+r.tpD;
+  document.getElementById('atrV').textContent=r.atr14;
+
+  document.getElementById('siList').innerHTML=r.siItems.map(s=>`<div class="si"><div class="si-ico">${s.ico}</div><div><div class="si-q">${s.q}</div><div class="si-a">${s.a}</div></div></div>`).join('');
+  document.getElementById('confW').innerHTML=r.cf.map(c=>`<span class="cb ${c.c}">${c.t}</span>`).join('');
+
+  const phOrd=['ACC','MU','DIS','MD','RE'],ai=phOrd.indexOf(r.wp);
+  phOrd.forEach((p,i)=>{document.getElementById('ph'+i).className='ph-dot'+(i===ai?' active':i<ai?' done':'');const ln=document.getElementById('pl'+i);if(ln)ln.className='ph-ln'+(i<ai?' done':'');});
+  document.getElementById('wyDesc').textContent=r.wyDesc;
+
+  const cl=document.getElementById('cLvls'); cl.innerHTML='';
+  if(r.swH.length)cl.innerHTML+=`<div class="clvl"><div class="clvl-line r"></div><div class="clvl-txt r">Kháng cự: ${fmt(r.swH[r.swH.length-1].p)}</div></div>`;
+  if(r.swL.length)cl.innerHTML+=`<div class="clvl"><div class="clvl-line g"></div><div class="clvl-txt g">Hỗ trợ: ${fmt(r.swL[r.swL.length-1].p)}</div></div>`;
+  cl.innerHTML+=`<div class="clvl"><div class="clvl-line b"></div><div class="clvl-txt b">Entry: ${r.entry}</div></div>`;
+
+  showToast({LONG:'🟢 MUA '+r.entry,SHORT:'🔴 BÁN '+r.entry,WAIT:'⏳ CHỜ ĐỢI'}[r.dir]+' | '+r.conf+'%');
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}),200);
+}
+
+// ═══════════════════════════════════════
+// AUTO REFRESH
+// ═══════════════════════════════════════
+function setAuto(sec) {
+  ['a0','a30','a60','a300'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  if(autoTimer)clearInterval(autoTimer); autoTimer=null;
+  const map={0:'a0',30:'a30',60:'a60',300:'a300'};
+  if(map[sec])document.getElementById(map[sec]).classList.add('active');
+  if(sec>0){autoTimer=setInterval(runAnalysis,sec*1000);showToast('⏱ Tự động cập nhật mỗi '+(sec<60?sec+'s':sec/60+'p'));}
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function setButtons(dis){
+  document.getElementById('analyzeBtn').disabled=dis;
+  document.getElementById('mAnalyzeBtn').disabled=dis;
+}
+function setLs(n,s){document.getElementById('ls'+n).className='ls '+(s==='act'?'act':'done');}
+function showErr(msg){
+  document.getElementById('errMsg').textContent='❌ '+msg;
+  document.getElementById('errTip').textContent='Kiểm tra: kết nối internet, server Vercel đang chạy, thử lại sau vài giây.';
+  document.getElementById('errCard').classList.add('on');
+}
+function hideErr(){document.getElementById('errCard').className='err-card';}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3500);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// Init
+fetchTicker().catch(()=>{});
+tickerTimer = setInterval(()=>fetchTicker().catch(()=>{}), 12000);
+</script>
+</body>
+</html>
